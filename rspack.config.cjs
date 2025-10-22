@@ -15,6 +15,8 @@ const aliases = Object.entries(tsconfig.compilerOptions.paths || {}).reduce(
 module.exports = {
   context: __dirname,
   target: 'node',
+  mode: 'production',
+  devtool: 'source-map',
   entry: {
     entrypoint: ['./src/entrypoint.ts']
   },
@@ -25,7 +27,8 @@ module.exports = {
       type: 'module'
     },
     chunkFormat: 'module',
-    clean: true
+    clean: true,
+    pathinfo: true
   },
   experiments: {
     outputModule: true,
@@ -63,23 +66,7 @@ module.exports = {
     ]
   },
   optimization: {
-    minimizer: [
-      new SwcJsMinimizerRspackPlugin({
-        minimizerOptions: {
-          // We need to disable mangling and compression for class names and function names for Nest.js to work properly
-          // The execution context class returns a reference to the class/handler function, which is for example used for applying metadata using decorators
-          // https://docs.nestjs.com/fundamentals/execution-context#executioncontext-class
-          compress: {
-            keep_classnames: true,
-            keep_fnames: true
-          },
-          mangle: {
-            keep_classnames: true,
-            keep_fnames: true
-          }
-        }
-      })
-    ]
+    minimize: false
   },
   externalsType: 'module',
   externals: [
