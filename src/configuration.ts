@@ -4,4 +4,5 @@ export default () => ({
   awsRegion: process.env.AWS_REGION,
   titvoReportBucketName: process.env.TITVO_REPORT_BUCKET_NAME,
   titvoReportBucketWebsiteUrl: process.env.TITVO_REPORT_BUCKET_WEBSITE_URL,
+  titvoEventBusName: process.env.TITVO_EVENT_BUS_NAME,
 });

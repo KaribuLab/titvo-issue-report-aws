@@ -70,6 +70,7 @@ async function isAppStackCompleted(cloudFormationClient: CloudFormationClient): 
     s3ReportBucketArn: params[`${basePath}/s3/report/bucket_arn`],
     s3ReportBucketName: params[`${basePath}/s3/report/bucket_name`],
     s3ReportWebsiteUrl: params[`${basePath}/s3/report/website_url`],
+    eventBusName: params[`${basePath}/eventbridge/eventbus_name`],
 
     /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   });

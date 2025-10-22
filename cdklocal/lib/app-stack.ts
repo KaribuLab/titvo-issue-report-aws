@@ -12,6 +12,7 @@ export interface AppStackProps extends cdk.StackProps {
   s3ReportBucketArn: string;
   s3ReportBucketName: string;
   s3ReportWebsiteUrl: string;
+  eventBusName: string;
 }
 export class AppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AppStackProps) {
@@ -38,6 +39,8 @@ export class AppStack extends cdk.Stack {
         LOG_LEVEL: 'debug',
         TITVO_REPORT_BUCKET_NAME: props.s3ReportBucketName,
         TITVO_REPORT_BUCKET_WEBSITE_URL: props.s3ReportWebsiteUrl,
+        TITVO_EVENT_BUS_NAME: props.eventBusName,
+        NODE_OPTIONS: '--enable-source-maps',
       },
     });
 
