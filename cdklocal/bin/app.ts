@@ -1,21 +1,48 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { SSMClient, GetParametersByPathCommand } from '@aws-sdk/client-ssm';
+import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { AppStack, basePath } from '../lib/app-stack';
 
+async function isAppStackCompleted(cloudFormationClient: CloudFormationClient): Promise<boolean> {
+  const commandCloudFormation = new DescribeStacksCommand({
+    StackName: 'AppStack',
+  });
+  try {
+    const responseCloudFormation = await cloudFormationClient.send(commandCloudFormation);
+    if (responseCloudFormation.Stacks === undefined || responseCloudFormation.Stacks.length === 0) {
+      return false;
+    }
+    const completedStacks = responseCloudFormation.Stacks.filter((stack) => stack.StackStatus === 'CREATE_COMPLETE');
+    console.log(`Completed stacks: ${completedStacks.length}`);
+    console.log(`Total stacks: ${responseCloudFormation.Stacks.length}`);
+    return completedStacks.length === responseCloudFormation.Stacks.length;
+  } catch (error) {
+    return false;
+  }
+}
+
 (async () => {
+  const cloudFormationClient = new CloudFormationClient({
+    region: 'us-east-1',
+    endpoint: process.env.AWS_ENDPOINT_URL ?? 'http://localstack:4566',
+  });
+  console.log('Waiting for stack AppStack to be created...');
+  while (!await isAppStackCompleted(cloudFormationClient)) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
   const ssmClient = new SSMClient({
     region: 'us-east-1',
     endpoint: process.env.AWS_ENDPOINT_URL ?? 'http://localstack:4566',
   });
-  const command = new GetParametersByPathCommand({
+  const commandSSM = new GetParametersByPathCommand({
     Path: `${basePath}/s3/report`,
   });
-  const response = await ssmClient.send(command);
-  if (!response.Parameters) {
+  const responseSSM = await ssmClient.send(commandSSM);
+  if (!responseSSM.Parameters) {
     throw new Error('No parameters found');
   }
-  const params = response.Parameters.reduce((acc, param) => {
+  const params = responseSSM.Parameters.reduce((acc, param) => {
     if (param.Name !== undefined && param.Value !== undefined) {
       acc[param.Name as keyof Record<string, string>] = param.Value;
     }
