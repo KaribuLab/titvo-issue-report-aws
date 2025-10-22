@@ -1,16 +1,20 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import * as path from 'path';
 
-const basePath = '/tvo/security-scan/localstack/infra';
+export const basePath = '/tvo/security-scan/localstack/infra';
 
+export interface AppStackProps extends cdk.StackProps {
+  s3ReportBucketArn: string;
+  s3ReportBucketName: string;
+  s3ReportWebsiteUrl: string;
+}
 export class AppStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: AppStackProps) {
     super(scope, id, props);
 
     // Importar cola SQS existente de LocalStack
@@ -32,6 +36,8 @@ export class AppStack extends cdk.Stack {
       environment: {
         AWS_STAGE: 'local',
         LOG_LEVEL: 'debug',
+        TITVO_REPORT_BUCKET_NAME: props.s3ReportBucketName,
+        TITVO_REPORT_BUCKET_WEBSITE_URL: props.s3ReportWebsiteUrl,
       },
     });
 
