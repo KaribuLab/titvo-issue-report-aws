@@ -16,10 +16,17 @@ export class Annotation {
 }
 
 export class IssueReportInputDto {
-  repository: string
-  status: ReportStatus
-  annotations: Annotation[]
+  taskId: string
+  data: {
+    status: ReportStatus
+    annotations: Annotation[]
+  }
 }
 export class IssueReportOutputDto {
-  reportURL: string
+  taskId: string
+  success: boolean
+  message: string
+  data: {
+    reportURL: string
+  }
 }

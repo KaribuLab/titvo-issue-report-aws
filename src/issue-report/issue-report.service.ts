@@ -27,7 +27,12 @@ export class IssueReportService {
     await this.s3Service.uploadFile(bucketName, 'text/html', Buffer.from(html), key);
     this.logger.debug(`Report uploaded to bucket ${bucketName} with website URL ${websiteUrl}/${key}`);
     return {
-      reportURL: `${websiteUrl}/${key}`
+      taskId: input.taskId,
+      success: true,
+      message: 'Report uploaded successfully',
+      data: {
+        reportURL: `${websiteUrl}/${key}`
+      }
     }
   }
 }
