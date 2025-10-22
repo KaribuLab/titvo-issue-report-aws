@@ -1,4 +1,4 @@
-const { SwcJsMinimizerRspackPlugin, IgnorePlugin } = require('@rspack/core')
+const { IgnorePlugin } = require('@rspack/core')
 const path = require('path')
 const tsconfig = require('./tsconfig.json')
 
@@ -59,7 +59,9 @@ module.exports = {
                 legacyDecorator: true,
                 decoratorMetadata: true
               }
-            }
+            },
+            sourceMaps: true,
+            inlineSourcesContent: false
           }
         }
       }
