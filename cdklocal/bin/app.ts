@@ -22,6 +22,31 @@ async function isAppStackCompleted(cloudFormationClient: CloudFormationClient): 
   }
 }
 
+async function getParameters(ssmClient: SSMClient, nextToken?: string): Promise<Record<string, string>> {
+  const commandSSM = new GetParametersByPathCommand({
+    Path: basePath,
+    Recursive: true,
+    NextToken: nextToken,
+  });
+  const responseSSM = await ssmClient.send(commandSSM);
+  if (responseSSM.Parameters !== undefined && responseSSM.Parameters.length === 0) {
+    throw new Error('No parameters found');
+  }
+  let params: Record<string, string> = {};
+  if (responseSSM.Parameters !== undefined) {
+    params = responseSSM.Parameters.reduce((acc, param) => {
+      if (param.Name !== undefined && param.Value !== undefined) {
+        acc[param.Name as keyof Record<string, string>] = param.Value;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  }
+  if (responseSSM.NextToken !== undefined) {
+    params = { ...params, ...await getParameters(ssmClient, responseSSM.NextToken) };
+  }
+  return params;
+}
+
 (async () => {
   if (!process.env.CDK_STACK_NAME) {
     throw new Error('CDK_STACK_NAME is not set');
@@ -38,19 +63,7 @@ async function isAppStackCompleted(cloudFormationClient: CloudFormationClient): 
     region: 'us-east-1',
     endpoint: process.env.AWS_ENDPOINT_URL ?? 'http://localstack:4566',
   });
-  const commandSSM = new GetParametersByPathCommand({
-    Path: `${basePath}/s3/report`,
-  });
-  const responseSSM = await ssmClient.send(commandSSM);
-  if (!responseSSM.Parameters) {
-    throw new Error('No parameters found');
-  }
-  const params = responseSSM.Parameters.reduce((acc, param) => {
-    if (param.Name !== undefined && param.Value !== undefined) {
-      acc[param.Name as keyof Record<string, string>] = param.Value;
-    }
-    return acc;
-  }, {} as Record<string, string>);
+  const params = await getParameters(ssmClient);
   const app = new cdk.App();
   new AppStack(app, process.env.CDK_STACK_NAME as string, {
     /* If you don't specify 'env', this stack will be environment-agnostic.
