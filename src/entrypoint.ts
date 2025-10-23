@@ -9,7 +9,7 @@ import { AppModule } from '@lambda/app.module'
 import { INestApplicationContext, Logger as NestLogger } from '@nestjs/common'
 import { Logger } from 'nestjs-pino'
 import { IssueReportService } from '@lambda/issue-report/issue-report.service'
-import { IssueReportInputDto } from './issue-report/issue-report.dto'
+import { IssueReportInputDto } from '@lambda/issue-report/issue-report.dto'
 
 const logger = new NestLogger('issue-reportLambdaHandler')
 
