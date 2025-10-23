@@ -42,7 +42,7 @@ export const handler: Handler<SQSEvent> = async (
 ): Promise<void> => {
   if (event && event.Records && Array.isArray(event.Records)) {
     try {
-      logger.log(`Iniciando issue-reportLambdaHandler: ${JSON.stringify(event)}`)
+      logger.debug(`Iniciando issue-reportLambdaHandler: ${JSON.stringify(event)}`)
 
       const records: IssueReportEvent[] = event.Records.map(
         (record: SQSRecord) => JSON.parse(record.body) as IssueReportEvent
