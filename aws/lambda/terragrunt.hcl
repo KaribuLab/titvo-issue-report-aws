@@ -25,6 +25,11 @@ dependency parameters {
   mock_outputs = {
     parameters = {
       "/tvo/security-scan/prod/infra/sqs/mcp/issue-report/input/queue_arn" = "arn:aws:sqs:us-east-1:000000000000:test-queue"
+      "/tvo/security-scan/prod/infra/s3/report_bucket_arn" = "arn:aws:s3:us-east-1:000000000000:test-bucket"
+      "/tvo/security-scan/prod/infra/s3/report_bucket_name" = "test-bucket"
+      "/tvo/security-scan/prod/infra/s3/report_bucket_website_url" = "https://test-bucket.s3.us-east-1.amazonaws.com"
+      "/tvo/security-scan/prod/infra/eventbridge/eventbus_arn" = "arn:aws:events:us-east-1:000000000000:event-bus/test-bus"
+      "/tvo/security-scan/prod/infra/eventbridge/eventbus_name" = "test-bus"
     }
   }
 }
@@ -53,11 +58,33 @@ inputs = {
         ],
         "Resource" : dependency.parameters.outputs.parameters["${local.base_path}/infra/sqs/issue-report/queue_arn"]
       },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:PutObject",
+          "s3:GetObject",
+        ],
+        "Resource" : [
+          dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/report_bucket_arn"],
+          "${dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/report_bucket_arn"]}/*"
+        ]
+      }
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "events:PutEvents",
+        ],
+        "Resource" : dependency.parameters.outputs.parameters["${local.base_path}/infra/eventbridge/eventbus_arn"]
+      },
     ]
   })
   environment_variables = {
-    AWS_STAGE = local.serverless.locals.stage
-    LOG_LEVEL = local.serverless.locals.stage != "prod" ? "debug" : "info"
+    AWS_STAGE                       = local.serverless.locals.stage
+    LOG_LEVEL                       = local.serverless.locals.stage != "prod" ? "debug" : "info"
+    TITVO_EVENT_BUS_NAME            = dependency.parameters.outputs.parameters["${local.base_path}/infra/eventbridge/eventbus_name"]
+    TITVO_REPORT_BUCKET_NAME        = dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/report_bucket_name"]
+    TITVO_REPORT_BUCKET_WEBSITE_URL = dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/report_bucket_website_url"]
+    NODE_OPTIONS                    = "--enable-source-maps"
   }
   event_sources_arn = [
     dependency.parameters.outputs.parameters["${local.base_path}/infra/sqs/mcp/issue-report/input/queue_arn"]
