@@ -28,8 +28,12 @@ export class IssueReportService {
       Source: 'mcp.tool.issue.report',
       DetailType: 'output',
       Detail: JSON.stringify({
-        taskId: input.taskId,
-        reportURL: `${websiteUrl}/${key}`
+        task_id: input.taskId,
+        success: true,
+        message: 'Report uploaded successfully',
+        data: {
+          report_url: `${websiteUrl}/${key}`
+        }
       }),
       EventBusName: this.configService.get<string>('titvoEventBusName') as string
     }]);
