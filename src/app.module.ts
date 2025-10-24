@@ -7,7 +7,8 @@ import { IssueReportModule } from '@lambda/issue-report/issue-report.module'
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const htmlTemplate = readFileSync(join('.', 'templates', 'report.html')).toString('utf-8')
+const templatePath = join(__dirname, 'templates', 'report.html')
+const htmlTemplate = readFileSync(templatePath, 'utf-8')
 
 @Module({
   imports: [
@@ -27,9 +28,7 @@ const htmlTemplate = readFileSync(join('.', 'templates', 'report.html')).toStrin
       load: [configuration],
     }),
     IssueReportModule.forRoot({
-      useFactory: (): string => {
-        return htmlTemplate
-      }
+      useFactory: (): string => htmlTemplate
     }),
   ]
 })

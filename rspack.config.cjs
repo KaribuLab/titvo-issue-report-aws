@@ -43,7 +43,7 @@ module.exports = {
       patterns: [
         {
           from: path.resolve(__dirname, 'src/templates'),
-          to: path.resolve(__dirname, 'build/templates'),
+          to: path.resolve(__dirname, 'build/src/templates'),
           globOptions: {
             ignore: ['**/*.js', '**/*.ts']
           }
