@@ -1,5 +1,5 @@
 export enum ReportStatus {
-  OPEN = 'SUCCESS',
+  COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
   WARNING = 'WARNING',
 }
