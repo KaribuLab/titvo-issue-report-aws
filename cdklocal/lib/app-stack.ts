@@ -35,7 +35,7 @@ export class AppStack extends cdk.Stack {
       memorySize: 512,
       description: 'Lambda function for MCP Issue Report',
       environment: {
-        AWS_STAGE: 'local',
+        AWS_STAGE: 'localstack',
         LOG_LEVEL: 'debug',
         TITVO_REPORT_BUCKET_NAME: props.s3ReportBucketName,
         TITVO_REPORT_BUCKET_WEBSITE_URL: props.s3ReportWebsiteUrl,

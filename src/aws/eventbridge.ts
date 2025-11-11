@@ -19,7 +19,7 @@ export class EventBridgeService {
 }
 
 export function createEventBridgeService(options: EventBridgeServiceOptions): EventBridgeService {
-    const eventBridgeClient = options.awsStage === 'local' ? new EventBridgeClient({
+    const eventBridgeClient = options.awsStage === 'localstack' ? new EventBridgeClient({
         region: options.awsRegion,
         endpoint: options.awsEndpoint,
     }) : new EventBridgeClient();

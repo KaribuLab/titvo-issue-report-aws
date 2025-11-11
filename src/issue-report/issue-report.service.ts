@@ -28,7 +28,7 @@ export class IssueReportService {
       Source: 'mcp.tool.issue.report',
       DetailType: 'output',
       Detail: JSON.stringify({
-        task_id: input.taskId,
+        job_id: input.jobId,
         success: true,
         message: 'Report uploaded successfully',
         data: {
@@ -37,9 +37,9 @@ export class IssueReportService {
       }),
       EventBusName: this.configService.get<string>('titvoEventBusName') as string
     }]);
-    this.logger.debug(`EventBridge event sent for task ${input.taskId}`);
+    this.logger.debug(`EventBridge event sent for job ${input.jobId}`);
     return {
-      taskId: input.taskId,
+      jobId: input.jobId,
       success: true,
       message: 'Report uploaded successfully',
       data: {

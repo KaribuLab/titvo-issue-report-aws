@@ -16,14 +16,14 @@ export class Annotation {
 }
 
 export class IssueReportInputDto {
-  taskId: string
+  jobId: string
   data: {
     status: ReportStatus
     annotations: Annotation[]
   }
 }
 export class IssueReportOutputDto {
-  taskId: string
+  jobId: string
   success: boolean
   message: string
   data: {
