@@ -9,7 +9,7 @@ import { AppModule } from '@lambda/app.module'
 import { INestApplicationContext, Logger as NestLogger } from '@nestjs/common'
 import { Logger } from 'nestjs-pino'
 import { IssueReportService } from '@lambda/issue-report/issue-report.service'
-import { IssueReportInputDto } from '@lambda/issue-report/issue-report.dto'
+import { Annotation, IssueReportInputDto, ReportStatus } from '@lambda/issue-report/issue-report.dto'
 
 const logger = new NestLogger('issue-reportLambdaHandler')
 
@@ -33,7 +33,13 @@ if (app === undefined) {
 const service = app.get(IssueReportService)
 
 interface IssueReportEvent {
-  detail: IssueReportInputDto
+  detail: {
+    job_id: string
+    data: {
+      status: string
+      annotations: Annotation[]
+    }
+  }
 }
 
 export const handler: Handler<SQSEvent> = async (
@@ -50,7 +56,13 @@ export const handler: Handler<SQSEvent> = async (
 
       const promises = records.map(async (record) => {
         logger.debug(`Procesando mensaje: ${JSON.stringify(record)}`)
-        return service.process(record.detail)
+        return service.process({
+          jobId: record.detail.job_id,
+          data: {
+            status: record.detail.data.status as ReportStatus,
+            annotations: record.detail.data.annotations,
+          },
+        })
       })
 
       await Promise.all(promises)
