@@ -5,7 +5,6 @@ import { S3Service } from '@lambda/aws/s3.service';
 import { randomUUID } from 'crypto';
 import Mustache from 'mustache';
 import { EventBridgeService } from '@lambda/aws/eventbridge';
-import { REPORT_TEMPLATE } from '@lambda/issue-report/issue-report.module';
 
 @Injectable()
 export class IssueReportService {
