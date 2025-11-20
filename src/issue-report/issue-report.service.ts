@@ -10,47 +10,59 @@ import { REPORT_TEMPLATE } from '@lambda/issue-report/issue-report.module';
 @Injectable()
 export class IssueReportService {
   private readonly logger = new Logger(IssueReportService.name)
-  constructor (
+  constructor(
     private readonly configService: ConfigService,
     private readonly s3Service: S3Service,
     private readonly eventBridgeService: EventBridgeService,
     @Inject('REPORT_TEMPLATE') private readonly reportTemplate: string,
-  ) {}
-  async process (input: IssueReportInputDto): Promise<IssueReportOutputDto> {
-    const bucketName = this.configService.get<string>('titvoReportBucketName') as string;
-    const websiteUrl = this.configService.get<string>('titvoReportBucketWebsiteUrl') as string;
-    this.logger.debug(`Uploading report to bucket ${bucketName} with website URL ${websiteUrl}`);
-    const key = `reports/${randomUUID()}.html`;
-    const renderedHtml = Mustache.render(this.reportTemplate, this.prepareTemplateData(input.data));
-    await this.s3Service.uploadFile(bucketName, 'text/html; charset=utf-8', Buffer.from(renderedHtml), key);
-    this.logger.debug(`Report uploaded to bucket ${bucketName} with website URL ${websiteUrl}/${key}`);
-    await this.eventBridgeService.putEvents([{
-      Source: 'mcp.tool.issue.report',
-      DetailType: 'output',
-      Detail: JSON.stringify({
-        job_id: input.jobId,
-        success: true,
-        message: 'Report uploaded successfully',
-        data: {
-          report_url: `${websiteUrl}/${key}`
-        }
-      }),
-      EventBusName: this.configService.get<string>('titvoEventBusName') as string
-    }]);
-    this.logger.debug(`EventBridge event sent for job ${input.jobId}`);
-    return {
-      jobId: input.jobId,
-      success: true,
-      message: 'Report uploaded successfully',
+  ) { }
+  async process(input: IssueReportInputDto): Promise<IssueReportOutputDto> {
+    const eventData = {
+      job_id: input.jobId,
+      success: false,
+      message: 'Not executed',
       data: {
-        reportURL: `${websiteUrl}/${key}`
+        report_url: ''
       }
     }
+    try {
+      const bucketName = this.configService.get<string>('titvoReportBucketName') as string;
+      const websiteUrl = this.configService.get<string>('titvoReportBucketWebsiteUrl') as string;
+      this.logger.debug(`Uploading report to bucket ${bucketName} with website URL ${websiteUrl}`);
+      const key = `reports/${randomUUID()}.html`;
+      const renderedHtml = Mustache.render(this.reportTemplate, this.prepareTemplateData(input.data));
+      await this.s3Service.uploadFile(bucketName, 'text/html; charset=utf-8', Buffer.from(renderedHtml), key);
+      this.logger.debug(`Report uploaded to bucket ${bucketName} with website URL ${websiteUrl}/${key}`);
+      eventData.success = true;
+      eventData.message = 'Report uploaded successfully';
+      eventData.data.report_url = `${websiteUrl}/${key}`;
+    } catch (error) {
+      this.logger.error(`Error processing issue report for job ${input.jobId}: ${error}`);
+      eventData.success = false;
+      eventData.message = (error as Error).message ?? error as string;
+    } finally {
+      this.logger.debug(`EventBridge event sent for job ${input.jobId}`);
+      this.logger.debug(`EventBridge event data: ${JSON.stringify(eventData)}`);
+      await this.eventBridgeService.putEvents([{
+        Source: 'mcp.tool.issue.report',
+        DetailType: 'output',
+        Detail: JSON.stringify(eventData),
+        EventBusName: this.configService.get<string>('titvoEventBusName') as string
+      }]);
+    }
+    return {
+      jobId: eventData.job_id,
+      success: eventData.success,
+      message: eventData.message,
+      data: {
+        reportURL: eventData.data.report_url
+      }
+    };
   }
 
   private prepareTemplateData(data: IssueReportInputDto['data']) {
     const annotations = data.annotations || [];
-    
+
     // Calcular contadores por severidad
     const severityCounts = annotations.reduce((acc, issue) => {
       const severity = issue.severity.toUpperCase();
