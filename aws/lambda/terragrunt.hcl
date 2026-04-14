@@ -21,7 +21,7 @@ dependency log {
 }
 
 dependency parameters {
-  config_path = "${get_parent_terragrunt_dir()}/aws/parameter"
+  config_path = "${get_parent_terragrunt_dir()}/aws/parameter/lookup"
   mock_outputs = {
     parameters = {
       "/tvo/security-scan/prod/infra/sqs/mcp/issue-report/input/queue_arn" = "arn:aws:sqs:us-east-2:123456789012:tvo-mcp-issue-report-input-prod"
