@@ -69,19 +69,11 @@ inputs = {
           "${dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/reports/bucket_arn"]}/*"
         ]
       },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "events:PutEvents",
-        ],
-        "Resource" : dependency.parameters.outputs.parameters["${local.base_path}/infra/eventbridge/eventbus_arn"]
-      },
     ]
   })
   environment_variables = {
     AWS_STAGE                       = local.serverless.locals.stage
     LOG_LEVEL                       = local.serverless.locals.stage != "prod" ? "debug" : "info"
-    TITVO_EVENT_BUS_NAME            = dependency.parameters.outputs.parameters["${local.base_path}/infra/eventbridge/eventbus_name"]
     TITVO_REPORT_BUCKET_NAME        = dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/reports/bucket_name"]
     TITVO_REPORT_BUCKET_WEBSITE_URL = dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/reports/bucket_website_url"]
     NODE_OPTIONS                    = "--enable-source-maps"

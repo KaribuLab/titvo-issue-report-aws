@@ -80,8 +80,6 @@ async function getParameters(ssmClient: SSMClient, nextToken?: string): Promise<
     s3ReportBucketArn: params[`${basePath}/s3/reports/bucket_arn`],
     s3ReportBucketName: params[`${basePath}/s3/reports/bucket_name`],
     s3ReportWebsiteUrl: params[`${basePath}/s3/reports/bucket_website_url`],
-    eventBusName: params[`${basePath}/eventbridge/eventbus_name`],
-
     /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   });
 })();

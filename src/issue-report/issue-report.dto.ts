@@ -16,17 +16,9 @@ export class Annotation {
 }
 
 export class IssueReportInputDto {
-  jobId: string
-  data: {
-    status: ReportStatus
-    annotations: Annotation[]
-  }
+  status: ReportStatus
+  annotations: Annotation[]
 }
 export class IssueReportOutputDto {
-  jobId: string
-  success: boolean
-  message: string
-  data: {
-    reportURL: string
-  }
+  reportURL: string
 }
