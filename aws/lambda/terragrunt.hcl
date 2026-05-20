@@ -51,16 +51,6 @@ inputs = {
       {
         "Effect" : "Allow",
         "Action" : [
-          "sqs:ChangeMessageVisibility",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:ReceiveMessage",
-        ],
-        "Resource" : dependency.parameters.outputs.parameters["${local.base_path}/infra/sqs/mcp/issue-report/input/queue_arn"]
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
           "s3:PutObject",
           "s3:GetObject",
         ],
@@ -78,9 +68,6 @@ inputs = {
     TITVO_REPORT_BUCKET_WEBSITE_URL = dependency.parameters.outputs.parameters["${local.base_path}/infra/s3/reports/bucket_website_url"]
     NODE_OPTIONS                    = "--enable-source-maps"
   }
-  event_sources_arn = [
-    dependency.parameters.outputs.parameters["${local.base_path}/infra/sqs/mcp/issue-report/input/queue_arn"]
-  ]
   runtime       = "nodejs22.x"
   handler       = "src/entrypoint.handler"
   bucket        = local.serverless.locals.service_bucket
