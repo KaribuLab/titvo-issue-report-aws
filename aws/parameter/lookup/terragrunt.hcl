@@ -21,10 +21,6 @@ provider "aws" {
 EOF
 }
 
-include {
-  path = find_in_parent_folders()
-}
-
 inputs = {
   base_path = local.base_path
 }
