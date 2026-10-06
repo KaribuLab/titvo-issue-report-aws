@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
-import { IssueReportInputDto, IssueReportOutputDto } from '@lambda/issue-report/issue-report.dto'
+import { IncompleteAnalysis, IssueReportInputDto, IssueReportOutputDto } from '@lambda/issue-report/issue-report.dto'
 import { S3Service } from '@lambda/aws/s3.service';
 import { randomUUID } from 'crypto';
 import Mustache from 'mustache';
@@ -48,7 +48,10 @@ export class IssueReportService {
       severity_label: this.getSeverityLabel(issue.severity)
     }));
 
+    const incomplete = this.prepareIncomplete(data.incomplete);
+
     return {
+      incomplete,
       scan_date: new Date().toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
@@ -62,6 +65,29 @@ export class IssueReportService {
       medium_issues: severityCounts['MEDIUM'] || 0,
       low_issues: severityCounts['LOW'] || 0,
       issues
+    };
+  }
+
+  /**
+   * Normaliza el bloque `incomplete` para Mustache. Devuelve `null` cuando el
+   * análisis fue completo, de modo que la sección no se renderice.
+   */
+  private prepareIncomplete(incomplete?: IncompleteAnalysis) {
+    if (!incomplete) {
+      return null;
+    }
+    const files = Array.isArray(incomplete.files_not_fully_analyzed)
+      ? incomplete.files_not_fully_analyzed.filter((f) => typeof f === 'string')
+      : [];
+    const failedBatches = Array.isArray(incomplete.failed_batches) ? incomplete.failed_batches.length : 0;
+    const message =
+      incomplete.message ||
+      `Análisis incompleto: ${failedBatches} lote(s) fallaron; ${files.length} archivo(s) sin analizar completamente`;
+    return {
+      message,
+      files,
+      has_files: files.length > 0,
+      failed_batches: failedBatches,
     };
   }
 
