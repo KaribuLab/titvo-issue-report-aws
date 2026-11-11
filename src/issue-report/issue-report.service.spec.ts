@@ -1,10 +1,52 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'fs'
 import path from 'path'
+import { runInNewContext } from 'vm'
 import { IssueReportService } from './issue-report.service'
 import { IssueReportInputDto, ReportStatus } from './issue-report.dto'
 
 const template = readFileSync(path.resolve(__dirname, '../templates/report.html'), 'utf-8')
+
+// Ejecuta el script real del reporte con APIs del navegador simuladas.
+function buildLinkContext(writeText?: ReturnType<typeof vi.fn>) {
+  const context = {
+    window: { location: { href: 'https://reports.example.com/report.html?token=abc#old', hash: '' }, prompt: vi.fn() },
+    navigator: { clipboard: writeText ? { writeText } : undefined },
+    URL,
+    document: { getElementById: vi.fn(() => ({ textContent: '', classList: { add: vi.fn(), remove: vi.fn() } })) },
+    setTimeout: vi.fn(),
+  }
+  const scripts = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+  return { context, copy: runInNewContext(`${scripts.at(-1)![1]}; copyIssueLink`, context) }
+}
+
+describe('Enlaces directos a issues', () => {
+  it('asigna anclas únicas incluso con hallazgos repetidos', async () => {
+    const { service, uploaded } = buildService()
+    await service.process({ status: ReportStatus.WARNING, annotations: [annotation, annotation] })
+    const html = uploaded[0].html
+    expect([...html.matchAll(/id="issue-(\d+)"/g)].map(match => match[1])).toEqual(['1', '2'])
+    expect(html).toContain('href="#issue-1"')
+    expect(html).toContain('href="#issue-2"')
+  })
+
+  it('copia la URL preservando parámetros y reemplazando el fragmento anterior', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    const { context, copy } = buildLinkContext(writeText)
+    const event = { preventDefault: vi.fn() }
+    await copy(event, { hash: '#issue-2' })
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(context.window.location.hash).toBe('#issue-2')
+    expect(writeText).toHaveBeenCalledWith('https://reports.example.com/report.html?token=abc#issue-2')
+    expect(context.window.prompt).not.toHaveBeenCalled()
+  })
+
+  it.each([undefined, vi.fn().mockRejectedValue(new Error('denied'))])('permite copiar manualmente si falla el portapapeles', async (writeText) => {
+    const { context, copy } = buildLinkContext(writeText)
+    await copy({ preventDefault: vi.fn() }, { hash: '#issue-1' })
+    expect(context.window.prompt).toHaveBeenCalledWith('Copia el enlace a este issue:', 'https://reports.example.com/report.html?token=abc#issue-1')
+  })
+})
 
 const annotation = {
   title: 'Secreto expuesto',

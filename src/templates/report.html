@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Reporte de seguridad con enlaces directos y copia de URL por hallazgo. -->
 <html lang="es">
 
 <head>
@@ -69,6 +70,15 @@
 
         .issue:hover {
             transform: translateY(-2px);
+        }
+
+        .issue:target {
+            outline: 3px solid var(--titvo-primary);
+            scroll-margin-top: 20px;
+        }
+
+        .issue-link {
+            color: var(--titvo-primary);
         }
 
         .critical {
@@ -166,56 +176,6 @@
             color: var(--titvo-success);
         }
 
-        .feedback-buttons {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .feedback-btn {
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: none;
-            font-weight: 500;
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-correct {
-            background-color: var(--titvo-success);
-            color: white;
-        }
-
-        .btn-incorrect {
-            background-color: var(--titvo-danger);
-            color: white;
-        }
-
-        .feedback-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
-        .feedback-btn:active {
-            transform: translateY(0);
-        }
-
-        .feedback-selected {
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
-        }
-
-        .feedback-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .feedback-btn:disabled.feedback-selected {
-            opacity: 0.8;
-        }
-
         .incomplete-banner {
             background-color: #fef7e0;
             border: 1px solid var(--titvo-warning);
@@ -305,8 +265,9 @@
 
     <h2>Problemas Detectados</h2>
     {{#issues}}
-    <div class="issue {{severity_lower}}">
+    <div class="issue {{severity_lower}}" id="issue-{{index}}">
         <h3>{{title}}</h3>
+        <a class="issue-link" href="#issue-{{index}}" onclick="copyIssueLink(event, this)">Copiar enlace al issue #{{index}}</a>
         <div class="severity-badge severity-{{severity_lower}}">
             {{severity_label}}
         </div>
@@ -322,36 +283,24 @@
         <p><strong>Resumen:</strong></p>
         <p>{{summary}}</p>
         {{/summary}}
-
-        <div class="feedback-buttons">
-            <span><strong>¿Es correcto?</strong></span>
-            <button class="feedback-btn btn-correct" onclick="provideFeedback(this, '{{index}}', true)">
-                ✓ Sí
-            </button>
-            <button class="feedback-btn btn-incorrect" onclick="provideFeedback(this, '{{index}}', false)">
-                ✗ No
-            </button>
-        </div>
     </div>
     {{/issues}}
 
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        function provideFeedback(button, issueId, isCorrect) {
-            const parentButtons = button.parentElement.querySelectorAll('.feedback-btn');
-            parentButtons.forEach(btn => {
-                btn.classList.remove('feedback-selected');
-                btn.disabled = true;
-            });
-            button.classList.add('feedback-selected');
-            sendIssueFeedback(issueId, isCorrect);
-            showToast(`Feedback enviado para el issue #${issueId}`);
-        }
-
-        function sendIssueFeedback(issueId, isCorrect) {
-            console.log(`Issue #${issueId} marcado como ${isCorrect ? 'correcto' : 'incorrecto'}`);
-            return true;
+        // Copia la URL completa; si el portapapeles no está disponible, permite copiarla manualmente.
+        async function copyIssueLink(event, link) {
+            event.preventDefault();
+            window.location.hash = link.hash;
+            const url = new URL(window.location.href);
+            url.hash = link.hash;
+            try {
+                await navigator.clipboard.writeText(url.href);
+                showToast('Enlace copiado');
+            } catch (error) {
+                window.prompt('Copia el enlace a este issue:', url.href);
+            }
         }
 
         function showToast(message, duration = 3000) {
