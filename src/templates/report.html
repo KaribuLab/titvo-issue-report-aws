@@ -77,9 +77,37 @@
             scroll-margin-top: 20px;
         }
 
-        .issue-link {
-            color: var(--titvo-primary);
+        .issue-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
         }
+
+        .issue-heading h3 { margin-bottom: 0; }
+
+        .issue-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid #d2e3fc;
+            border-radius: 8px;
+            background: #f4f8ff;
+            color: var(--titvo-primary);
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .issue-link:hover { background: #e8f0fe; }
+        .issue-link:focus-visible { outline: 2px solid var(--titvo-primary); outline-offset: 3px; }
+        .issue-link:disabled { cursor: default; }
+        .issue-link.copied { color: #137333; background: #e6f4ea; border-color: #a8dab5; }
 
         .critical {
             border-left: 5px solid var(--titvo-danger);
@@ -266,8 +294,13 @@
     <h2>Problemas Detectados</h2>
     {{#issues}}
     <div class="issue {{severity_lower}}" id="issue-{{index}}">
-        <h3>{{title}}</h3>
-        <a class="issue-link" href="#issue-{{index}}" onclick="copyIssueLink(event, this)">Copiar enlace al issue #{{index}}</a>
+        <div class="issue-heading">
+            <h3>{{title}}</h3>
+            <button type="button" class="issue-link" data-issue-id="issue-{{index}}" onclick="copyIssueLink(this)" aria-label="Copiar enlace al issue #{{index}}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg>
+                <span>Copiar enlace</span>
+            </button>
+        </div>
         <div class="severity-badge severity-{{severity_lower}}">
             {{severity_label}}
         </div>
@@ -289,17 +322,50 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        // Copia la URL completa; si el portapapeles no está disponible, permite copiarla manualmente.
-        async function copyIssueLink(event, link) {
-            event.preventDefault();
-            window.location.hash = link.hash;
-            const url = new URL(window.location.href);
-            url.hash = link.hash;
+        // Copia en navegadores sin Clipboard API (por ejemplo, reportes servidos por HTTP).
+        function copyWithSelection(text) {
+            const previousFocus = document.activeElement;
+            const field = document.createElement('textarea');
+            field.value = text;
+            field.setAttribute('readonly', '');
+            field.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+            document.body.appendChild(field);
             try {
-                await navigator.clipboard.writeText(url.href);
+                field.select();
+                return document.execCommand('copy');
+            } finally {
+                field.remove();
+                if (previousFocus) previousFocus.focus({ preventScroll: true });
+            }
+        }
+
+        // Copia el enlace sin navegar ni abrir diálogos; confirma solo si la copia tuvo éxito.
+        async function copyIssueLink(button) {
+            const url = new URL(window.location.href);
+            url.hash = button.dataset.issueId;
+            const label = button.querySelector('span');
+            button.disabled = true;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    try {
+                        await navigator.clipboard.writeText(url.href);
+                    } catch (error) {
+                        if (!copyWithSelection(url.href)) throw error;
+                    }
+                } else if (!copyWithSelection(url.href)) {
+                    throw new Error('Clipboard unavailable');
+                }
+                label.textContent = '✓ Copiado';
+                button.classList.add('copied');
                 showToast('Enlace copiado');
+                setTimeout(() => {
+                    label.textContent = 'Copiar enlace';
+                    button.classList.remove('copied');
+                    button.disabled = false;
+                }, 2000);
             } catch (error) {
-                window.prompt('Copia el enlace a este issue:', url.href);
+                button.disabled = false;
+                showToast('No se pudo copiar: el navegador bloqueó el portapapeles.');
             }
         }
 
