@@ -296,6 +296,10 @@
 
     <div class="summary">
         <h2>Resumen</h2>
+        {{#has_acceptance}}
+        <p>Active findings: <span>{{active_issues}}</span></p>
+        <p>Accepted risks: <span>{{accepted_issues}}</span></p>
+        {{/has_acceptance}}
         <p>Total de Problemas: <span>{{total_issues}}</span></p>
         <p>Problemas Críticos: <span>{{critical_issues}}</span></p>
         <p>Problemas Altos: <span>{{high_issues}}</span></p>
@@ -307,6 +311,13 @@
     {{#issues}}
     <div class="issue {{severity_lower}}">
         <h3>{{title}}</h3>
+        {{#acceptance}}
+        <aside><strong>Accepted risk</strong>
+            <p>Reason: {{reason}}</p>
+            <p>Declared responsible party (not authenticated): {{accepted_by}}</p>
+            <p>Expires on: {{expires_on}}</p>
+        </aside>
+        {{/acceptance}}
         <div class="severity-badge severity-{{severity_lower}}">
             {{severity_label}}
         </div>

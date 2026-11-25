@@ -59,6 +59,9 @@ export class IssueReportService {
         hour: '2-digit',
         minute: '2-digit'
       }),
+      has_acceptance: annotations.some(issue => !!issue.acceptance),
+      accepted_issues: annotations.filter(issue => !!issue.acceptance).length,
+      active_issues: annotations.filter(issue => !issue.acceptance).length,
       total_issues: annotations.length,
       critical_issues: severityCounts['CRITICAL'] || 0,
       high_issues: severityCounts['HIGH'] || 0,

@@ -5,6 +5,7 @@ export enum ReportStatus {
 }
 
 export class Annotation {
+  acceptance?: { reason: string; accepted_by: string; expires_on: string }
   title: string
   description: string
   severity: string
