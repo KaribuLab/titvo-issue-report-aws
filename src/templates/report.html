@@ -284,6 +284,10 @@
 
     <div class="summary">
         <h2>Resumen</h2>
+        {{#has_acceptance}}
+        <p>Active findings: <span>{{active_issues}}</span></p>
+        <p>Accepted risks: <span>{{accepted_issues}}</span></p>
+        {{/has_acceptance}}
         <p>Total de Problemas: <span>{{total_issues}}</span></p>
         <p>Problemas Críticos: <span>{{critical_issues}}</span></p>
         <p>Problemas Altos: <span>{{high_issues}}</span></p>
@@ -301,6 +305,13 @@
                 <span>Copiar enlace</span>
             </button>
         </div>
+        {{#acceptance}}
+        <aside><strong>Accepted risk</strong>
+            <p>Reason: {{reason}}</p>
+            <p>Declared responsible party (not authenticated): {{accepted_by}}</p>
+            <p>Expires on: {{expires_on}}</p>
+        </aside>
+        {{/acceptance}}
         <div class="severity-badge severity-{{severity_lower}}">
             {{severity_label}}
         </div>
@@ -316,6 +327,17 @@
         <p><strong>Resumen:</strong></p>
         <p>{{summary}}</p>
         {{/summary}}
+        {{#exception_draft}}
+        <aside>
+            <h4>Exception draft—not approval</h4>
+            <p>Complete all three fields: reason, accepted_by (declared responsible party), and expires_on
+                (quoted YYYY-MM-DD). Verify the exact coordinates: path, line, and category.
+                Submit through Git review before use in the root .titvoignore.yml.</p>
+            <p>For an existing policy, merge the entry into the existing exceptions list;
+                do not append duplicate version or exceptions root keys. Unedited drafts fail validation.</p>
+            <pre><code class="language-yaml">{{exception_draft}}</code></pre>
+        </aside>
+        {{/exception_draft}}
     </div>
     {{/issues}}
 
