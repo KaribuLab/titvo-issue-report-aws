@@ -1,10 +1,89 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'fs'
 import path from 'path'
+import { runInNewContext } from 'vm'
 import { IssueReportService } from './issue-report.service'
 import { IssueReportInputDto, ReportStatus } from './issue-report.dto'
 
 const template = readFileSync(path.resolve(__dirname, '../templates/report.html'), 'utf-8')
+
+// Ejecuta el script real del reporte con APIs del navegador simuladas.
+function buildLinkContext(writeText?: ReturnType<typeof vi.fn>) {
+  const label = { textContent: 'Copiar enlace' }
+  const button = { dataset: { issueId: 'issue-2' }, disabled: false, querySelector: vi.fn(() => label), classList: { add: vi.fn(), remove: vi.fn() } }
+  const field = { value: '', setAttribute: vi.fn(), style: { cssText: '' }, select: vi.fn(), remove: vi.fn() }
+  const toast = { textContent: '', classList: { add: vi.fn(), remove: vi.fn() } }
+  const context = {
+    window: { location: { href: 'https://reports.example.com/report.html?token=abc#old', hash: '' }, isSecureContext: true, prompt: vi.fn() },
+    navigator: { clipboard: writeText ? { writeText } : undefined },
+    URL,
+    document: { getElementById: vi.fn(() => toast), createElement: vi.fn(() => field), body: { appendChild: vi.fn() }, execCommand: vi.fn(() => true), activeElement: { focus: vi.fn() } },
+    setTimeout: vi.fn(),
+  }
+  const scripts = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+  return { context, button, label, field, toast, copy: runInNewContext(`${scripts.at(-1)![1]}; copyIssueLink`, context) }
+}
+
+describe('Enlaces directos a issues', () => {
+  it('asigna anclas únicas incluso con hallazgos repetidos', async () => {
+    const { service, uploaded } = buildService()
+    await service.process({ status: ReportStatus.WARNING, annotations: [annotation, annotation] })
+    const html = uploaded[0].html
+    expect([...html.matchAll(/\sid="issue-(\d+)"/g)].map(match => match[1])).toEqual(['1', '2'])
+    expect(html).toContain('data-issue-id="issue-1"')
+    expect(html).toContain('data-issue-id="issue-2"')
+  })
+
+  it('copia la URL preservando parámetros y reemplazando el fragmento anterior', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    const { context, copy, button, label } = buildLinkContext(writeText)
+    await copy(button)
+    expect(context.window.location.hash).toBe('')
+    expect(writeText).toHaveBeenCalledWith('https://reports.example.com/report.html?token=abc#issue-2')
+    expect(context.window.prompt).not.toHaveBeenCalled()
+    expect(context.document.execCommand).not.toHaveBeenCalled()
+    expect(label.textContent).toBe('✓ Copiado')
+    const reset = context.setTimeout.mock.calls.find(call => call[1] === 2000)![0]
+    reset()
+    expect(label.textContent).toBe('Copiar enlace')
+    expect(button.disabled).toBe(false)
+  })
+
+  it.each([undefined, vi.fn().mockRejectedValue(new Error('denied'))])('copia automáticamente sin diálogo si falta o falla Clipboard API', async (writeText) => {
+    const { context, copy, button, field, label } = buildLinkContext(writeText)
+    await copy(button)
+    expect(field.value).toBe('https://reports.example.com/report.html?token=abc#issue-2')
+    expect(field.select).toHaveBeenCalled()
+    expect(context.document.execCommand).toHaveBeenCalledWith('copy')
+    expect(field.remove).toHaveBeenCalled()
+    expect(context.document.activeElement.focus).toHaveBeenCalled()
+    expect(context.window.prompt).not.toHaveBeenCalled()
+    expect(label.textContent).toBe('✓ Copiado')
+  })
+
+  it('usa selección directamente en HTTP', async () => {
+    const writeText = vi.fn()
+    const { context, copy, button } = buildLinkContext(writeText)
+    context.window.isSecureContext = false
+    await copy(button)
+    expect(writeText).not.toHaveBeenCalled()
+    expect(context.document.execCommand).toHaveBeenCalledWith('copy')
+  })
+
+  it.each([false, 'throw'])('no informa éxito si el navegador bloquea ambas alternativas (%s)', async (failure) => {
+    const { context, copy, button, label, field, toast } = buildLinkContext()
+    context.document.execCommand.mockImplementation(() => {
+      if (failure === 'throw') throw new Error('blocked')
+      return false
+    })
+    await copy(button)
+    expect(label.textContent).toBe('Copiar enlace')
+    expect(button.disabled).toBe(false)
+    expect(toast.textContent).toContain('No se pudo copiar')
+    expect(field.remove).toHaveBeenCalled()
+    expect(context.window.prompt).not.toHaveBeenCalled()
+  })
+})
 
 const annotation = {
   title: 'Secreto expuesto',
