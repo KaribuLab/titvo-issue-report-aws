@@ -333,6 +333,17 @@
         <p><strong>Resumen:</strong></p>
         <p>{{summary}}</p>
         {{/summary}}
+{{#exception_draft}}
+        <aside>
+            <h4>Exception draft—not approval</h4>
+            <p>Complete all three fields: reason, accepted_by (declared responsible party), and expires_on
+                (quoted YYYY-MM-DD). Verify the exact coordinates: path, line, and category.
+                Submit through Git review before use in the root .titvoignore.yml.</p>
+            <p>For an existing policy, merge the entry into the existing exceptions list;
+                do not append duplicate version or exceptions root keys. Unedited drafts fail validation.</p>
+            <pre><code class="language-yaml">{{exception_draft}}</code></pre>
+        </aside>
+{{/exception_draft}}
 
         <div class="feedback-buttons">
             <span><strong>¿Es correcto?</strong></span>

@@ -4,6 +4,7 @@ import { IncompleteAnalysis, IssueReportInputDto, IssueReportOutputDto } from '@
 import { S3Service } from '@lambda/aws/s3.service';
 import { randomUUID } from 'crypto';
 import Mustache from 'mustache';
+import { exceptionDraft } from './exception-draft';
 
 @Injectable()
 export class IssueReportService {
@@ -43,6 +44,7 @@ export class IssueReportService {
     // Mapear issues agregando campos necesarios para Mustache
     const issues = annotations.map((issue, index) => ({
       ...issue,
+      exception_draft: exceptionDraft(issue),
       index: index + 1,
       severity_lower: issue.severity.toLowerCase(),
       severity_label: this.getSeverityLabel(issue.severity)
